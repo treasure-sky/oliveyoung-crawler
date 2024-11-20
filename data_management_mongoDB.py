@@ -7,7 +7,7 @@ db = client["cosmetic_db"]
 brands_collection = db["brands"]
 products_collection = db["products"]
 
-def get_brand_id(brand_name):
+def get_brand_id_by_name(brand_name):
   """DB에서 브랜드 ID 조회
 
   Args:
@@ -36,7 +36,7 @@ def add_brand(brand_name):
   """
   new_brand = {
     "name": brand_name,
-    "websiteUrl": None,
+    "website_url": None,
     "description": None,
   }
   brand_id = brands_collection.insert_one(new_brand).inserted_id
