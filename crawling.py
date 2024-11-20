@@ -8,6 +8,21 @@ from selenium.common.exceptions import NoSuchElementException
 import time
 from data_management_mongoDB import *
 
+# 삽입할 데이터 받아올 주소
+url = "https://www.oliveyoung.co.kr/store/search/getSearchMain.do?query=%EC%BF%A0%EC%85%98&giftYn=N&t_page=%ED%99%88&t_click=%EA%B2%80%EC%83%89%EC%B0%BD&t_search_name=%EC%BF%A0%EC%85%98"
+
+# 삽입할 데이터 정보
+new_features = {
+  "skin_protection": True,
+  "functional": True,
+  "whitening": True,
+  "soothing": True,
+  "wrinkle_removal": False,
+  "acne_treatment": True,
+  "hypoallergenic": True,
+}
+new_suitable_skin_types = ["oily", "dry"] # "oily", "dry", "combination"
+
 # ChromeDriver 경로 설정
 chrome_driver_path = "./chromedriver-mac-arm64/chromedriver"
 
@@ -22,7 +37,6 @@ service = Service(chrome_driver_path)
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
 # 웹페이지 열기
-url = "https://www.oliveyoung.co.kr/store/search/getSearchMain.do?query=%EC%BF%A0%EC%85%98&giftYn=N&t_page=%ED%99%88&t_click=%EA%B2%80%EC%83%89%EC%B0%BD&t_search_name=%EC%BF%A0%EC%85%98"
 driver.get(url)
 
 # 페이지가 로드될 때까지 대기
@@ -41,34 +55,47 @@ for product in products:
     price = product.find_element(By.CSS_SELECTOR, ".tx_org .tx_num").text
     price = int(price.replace(",", ""))
   except NoSuchElementException:
-    price = "N/A"  # 요소가 없을 경우 기본값 설정
+    price = "N/A"
 
   # 브랜드 ID 조회
-  brand_id = get_brand_id(brand)
+  brand_id = get_brand_id_by_name(brand)
 
   # 브랜드 ID가 없으면 브랜드 추가
   if not brand_id:
     brand_id = add_brand(brand)
-  
-  crawled_data = {
-    "product_name": name,
-    "brand_id": brand_id,
-    "type": "toner",
-    "price": price,
-    "features": {
-      "skin_protection": True,
-      "functional": True,
-      "whitening": False,
-      "soothing": True,
-      "wrinkle_removal": False,
-      "acne_treatment": True,
-      "hypoallergenic": True,
-    },
-    "suitable_skin_types": ["oily", "dry", "combination"] # oily, dry, combination 에서 선택 가능
-  }
 
-  # 제품 데이터 저장
-  save_product(crawled_data)
+  # 기존 제품 데이터 조회
+  existing_product = get_product_by_name(name)
+
+  # 기존 데이터 존재하면 정보 업데이트
+  if existing_product:
+    # 기존 features와 병합
+    for key, value in new_features.items():
+      if key in existing_product["features"]:
+        existing_product["features"][key] = existing_product["features"][key] or value
+      else:
+        existing_product["features"][key] = value
+
+    # suitable_skin_types 병합
+    combined_skin_types = list(set(existing_product.get("suitable_skin_types", []) + new_suitable_skin_types))
+
+    # 제품 데이터 업데이트
+    update_product(existing_product["_id"], {
+      "price": price,
+      "features": existing_product["features"],
+      "suitable_skin_types": combined_skin_types
+    })
+  else:
+    # 새로운 제품 데이터 저장
+    crawled_data = {
+      "product_name": name,
+      "brand_id": brand_id,
+      "type": "toner",
+      "price": price,
+      "features": new_features,
+      "suitable_skin_types": new_suitable_skin_types
+    }
+    add_product(crawled_data)
 
 # 드라이버 종료
 driver.quit()
