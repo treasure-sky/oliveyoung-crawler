@@ -44,7 +44,7 @@ def add_brand(brand_name):
   return brand_id
 
 
-def save_product(product_data):
+def add_product(product_data):
   """제품 데이터를 데이터베이스에 저장
 
   Args:
