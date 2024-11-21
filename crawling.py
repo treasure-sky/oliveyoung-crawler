@@ -13,15 +13,21 @@ url = "https://www.oliveyoung.co.kr/store/search/getSearchMain.do?query=%EC%BF%A
 
 # 삽입할 데이터 정보
 new_features = {
-  "skin_protection": True,
-  "functional": True,
+  "moisturizing": True,
   "whitening": True,
   "soothing": True,
   "wrinkle_removal": False,
-  "acne_treatment": True,
-  "hypoallergenic": True,
+  "hypoallergenic": True
 }
-new_suitable_skin_types = ["oily", "dry"] # "oily", "dry", "combination"
+new_suitable_skin_types = {
+  "oily": True,
+  "dry": False,
+  "combination": True,
+  "dehydrated": True,
+  "normal": True,
+  "acne": True,
+  "sensitive": True
+}
 
 # ChromeDriver 경로 설정
 chrome_driver_path = "./chromedriver-mac-arm64/chromedriver"
@@ -57,13 +63,6 @@ for product in products:
   except NoSuchElementException:
     price = "N/A"
 
-  # 브랜드 ID 조회
-  brand_id = get_brand_id_by_name(brand)
-
-  # 브랜드 ID가 없으면 브랜드 추가
-  if not brand_id:
-    brand_id = add_brand(brand)
-
   # 기존 제품 데이터 조회
   existing_product = get_product_by_name(name)
 
@@ -76,20 +75,23 @@ for product in products:
       else:
         existing_product["features"][key] = value
 
-    # suitable_skin_types 병합
-    combined_skin_types = list(set(existing_product.get("suitable_skin_types", []) + new_suitable_skin_types))
+    for key, value in new_suitable_skin_types.items():
+      if key in existing_product["suitable_skin_types"]:
+        existing_product["suitable_skin_types"][key] = existing_product["suitable_skin_types"][key] or value
+      else:
+        existing_product["suitable_skin_types"][key] = value
 
     # 제품 데이터 업데이트
     update_product(existing_product["_id"], {
       "price": price,
       "features": existing_product["features"],
-      "suitable_skin_types": combined_skin_types
+      "suitable_skin_types": existing_product["suitable_skin_types"]
     })
   else:
     # 새로운 제품 데이터 저장
     crawled_data = {
       "product_name": name,
-      "brand_id": brand_id,
+      "brand_name": brand,
       "type": "toner",
       "price": price,
       "features": new_features,
