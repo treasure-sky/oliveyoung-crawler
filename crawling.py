@@ -12,6 +12,7 @@ from data_management_mongoDB import *
 url = "https://www.oliveyoung.co.kr/store/search/getSearchMain.do?query=%EC%BF%A0%EC%85%98&giftYn=N&t_page=%ED%99%88&t_click=%EA%B2%80%EC%83%89%EC%B0%BD&t_search_name=%EC%BF%A0%EC%85%98"
 
 # 삽입할 데이터 정보
+product_type = "skin"
 new_features = {
   "moisturizing": True,
   "whitening": True,
@@ -53,9 +54,9 @@ wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, "li_result")))
 products = driver.find_elements(By.CLASS_NAME, "li_result")
 for product in products:
   # 브랜드 이름 추출
-  brand = product.find_element(By.CLASS_NAME, "tx_brand").text
+  brand_name = product.find_element(By.CLASS_NAME, "tx_brand").text
   # 제품명 추출
-  name = product.find_element(By.CLASS_NAME, "tx_name").text
+  product_name = product.find_element(By.CLASS_NAME, "tx_name").text
   # 원가 추출
   try:
     price = product.find_element(By.CSS_SELECTOR, ".tx_org .tx_num").text
@@ -64,7 +65,7 @@ for product in products:
     price = "N/A"
 
   # 기존 제품 데이터 조회
-  existing_product = get_product_by_name(name)
+  existing_product = get_product_by_name(product_name)
 
   # 기존 데이터 존재하면 정보 업데이트
   if existing_product:
@@ -90,9 +91,9 @@ for product in products:
   else:
     # 새로운 제품 데이터 저장
     crawled_data = {
-      "product_name": name,
-      "brand_name": brand,
-      "type": "toner",
+      "product_name": product_name,
+      "brand_name": brand_name,
+      "type": product_type,
       "price": price,
       "features": new_features,
       "suitable_skin_types": new_suitable_skin_types
