@@ -82,7 +82,7 @@ for product in products:
       else:
         existing_product["suitable_skin_types"][key] = value
 
-    # 제품 데이터 업데이트
+    # 제품 데이터 업데이트(아래 key를 제외한 나머지는 변경되지 않음)
     update_product(existing_product["_id"], {
       "price": price,
       "features": existing_product["features"],
